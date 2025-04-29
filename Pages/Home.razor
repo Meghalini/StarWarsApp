@@ -1,0 +1,62 @@
+﻿@* HomePage - Displays a basic information about Project. *@
+
+@page "/"
+@inject NavigationManager NavigationManager
+
+<div class="text-center mt-5">
+    <h2 class="display-5">🌌 Welcome to the Star Wars Universe! 🌌</h2>
+    <p class="lead">Explore characters, starships, and movies from a galaxy far, far away...</p>
+
+    <div class="row mt-5 justify-content-center">
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm h-100" @onclick="NavigateToFilms" style="cursor: pointer;">
+                <div class="card-body">
+                    <h5 class="card-title">🎬 Films</h5>
+                    <p class="card-text">Relive the legendary Star Wars movies.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm h-100" @onclick="NavigateToCharacters" style="cursor: pointer;">
+                <div class="card-body">
+                    <h5 class="card-title">🧑 Characters</h5>
+                    <p class="card-text">Meet your favorite heroes and villains.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm h-100" @onclick="NavigateToStarships" style="cursor: pointer;">
+                <div class="card-body">
+                    <h5 class="card-title">🚀 Starships</h5>
+                    <p class="card-text">Discover the iconic starships of the galaxy.</p>
+                </div>
+            </div>
+        </div>
+
+        <hr class="my-4" />
+<div class="text-center text-muted mb-5">
+    <p>This web application was built as a part of a Take-Home Assignment, using .NET, Blazor and the Star Wars API (SWAPI).</p>
+    <p>It demonstrates clean architecture, search functionality, linking between related resources, and a polished UI/UX experience.</p>
+    <p>May the Force be with you! 🌟</p>
+</div>
+
+
+    </div>
+</div>
+
+@code {
+    private void NavigateToCharacters()
+    {
+        NavigationManager.NavigateTo("/characters");
+    }
+
+    private void NavigateToFilms()
+    {
+        NavigationManager.NavigateTo("/films");
+    }
+
+    private void NavigateToStarships()
+    {
+        NavigationManager.NavigateTo("/starships");
+    }
+}

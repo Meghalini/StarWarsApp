@@ -1,0 +1,89 @@
+@* Displays a list of starships with basic information. *@
+
+@page "/starships"
+@using StarWarsApp.Services
+@using StarWarsApp.Models
+@inject SwapiService SwapiService
+@inject NavigationManager NavigationManager
+
+<h1>Starships</h1>
+
+<input type="text" @bind="SearchTerm" placeholder="Search StarShips..." class="form-control mb-3" />
+
+@if (FilteredShips == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Model</th>
+                <th>Manufacturer</th>
+                <th>StarshipClass</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var ship in FilteredShips) 
+            {
+                <tr>
+                    <td>@ship.Name</td>
+                    <td>@ship.Model</td>
+                    <td>@ship.Manufacturer</td>
+                    <td>@ship.starship_class</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" @onclick="@(() => ViewStarshipDetails(ship.Url))">View Details</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Starship> starships = new();
+    private List<Starship> FilteredShips = new();
+    private string searchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        starships = await SwapiService.GetStarshipsAsync();
+        FilteredShips = starships; 
+    }
+
+    private void ViewStarshipDetails(string shipUrl)
+    {
+        var id = shipUrl.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+        NavigationManager.NavigateTo($"/starships/{id}");
+    }
+
+    private void FilterShips()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            FilteredShips = starships;
+        }
+        else
+        {
+            FilteredShips = starships
+                .Where(s => s.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private string SearchTerm
+    {
+        get => searchTerm;
+        set
+        {
+            if (searchTerm != value)
+            {
+                searchTerm = value;
+                FilterShips(); // refresh filtered list when search term changes
+            }
+        }
+    }
+}

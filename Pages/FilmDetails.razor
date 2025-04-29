@@ -1,0 +1,138 @@
+@* Displays detailed information about a selected Film. *@
+
+@page "/film/{FilmId:int}"
+@using StarWarsApp.Services
+@using StarWarsApp.Models
+@inject SwapiService SwapiService
+@inject NavigationManager NavigationManager
+
+<h1>Movie Details</h1>
+
+@if (film == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card p-4 mb-3">
+        <h2>@film.Title (Episode @film.Episode_Id)</h2>
+        <p><strong>Director:</strong> @film.Director</p>
+        <p><strong>Producer:</strong> @film.Producer</p>
+        <p><strong>Release Date:</strong> @film.Release_Date</p>
+        
+        <h4>Opening Crawl</h4>
+        <p>@film.Opening_Crawl</p>
+
+        <h4>Details</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Character</th>
+                    <th>Planet</th>
+                    <th>Starship</th>
+                    <th>Vehicle</th>
+                    <th>Species</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        @foreach (var character in characterList)
+                        {
+                            <div>
+                                <a href="#" @onclick:preventDefault="true" @onclick="@(() => OpenCharacterDetails(character.Id))">@character.Name</a>
+                            </div>
+                        }
+                    </td>
+                    <td>
+                        @foreach (var planet in Planets)
+                        {
+                            <div><p>@planet</p></div>
+                        }
+                    </td>
+                    <td>
+                        @foreach (var starship in StarshipsList)
+                        {
+                            <div>
+                                <a href="#" @onclick:preventDefault="true" @onclick="@(() => OpenStarshipDetails(starship.Id))">@starship.Name</a>
+                            </div> 
+                        }
+                    </td>
+                    <td>
+                        @foreach (var vehicle in Vehicles)
+                        {
+                            <div><p>@vehicle</p></div>
+                        }
+                    </td>
+                    <td>
+                        @foreach (var specie in Species)
+                        {
+                            <div><p>@specie</p></div>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn btn-secondary mt-3" @onclick="GoBack">Back</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int FilmId { get; set; }
+
+    private Film film;
+    private List<string> Characters = new();
+    private List<string> Planets = new();
+    private List<string> Starships = new();
+    private List<string> Vehicles = new();
+    private List<string> Species = new();
+    private List<(string Name, string Id)> characterList = new(); // Name + Id for characters
+    private List<(string Name, string Id)> StarshipsList = new(); // Name + Id for Starships
+
+    protected override async Task OnInitializedAsync()
+    {
+        var films = await SwapiService.GetFilmsAsync();
+        film = films.FirstOrDefault(f => f.Episode_Id == FilmId);
+
+        if (film != null)
+        {
+            Characters = await SwapiService.GetNamesAsync(film.Characters);
+            Planets = await SwapiService.GetNamesAsync(film.Planets);
+            Starships = await SwapiService.GetNamesAsync(film.Starships);
+            Vehicles = await SwapiService.GetNamesAsync(film.Vehicles);
+            Species = await SwapiService.GetNamesAsync(film.Species);
+
+            foreach (var characterUrl in film.Characters)
+            {
+                var id = characterUrl.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+                var character = await SwapiService.GetNameAsync(characterUrl);
+                characterList.Add((character, id));
+            }
+
+            foreach (var StarshipsUrl in film.Starships)
+            {
+                var id = StarshipsUrl.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+                var Starships = await SwapiService.GetNameAsync(StarshipsUrl);
+                StarshipsList.Add((Starships, id));
+            }
+        }
+    }
+
+    private void OpenCharacterDetails(string id)
+    {
+        NavigationManager.NavigateTo($"/people/{id}");
+    }
+
+    private void OpenStarshipDetails(string starshipName)
+    {
+        var starshipId = starshipName.Split('/').Last(); 
+        NavigationManager.NavigateTo($"/starships/{starshipId}");
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/films");
+    }
+}

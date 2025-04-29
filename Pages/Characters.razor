@@ -1,0 +1,107 @@
+﻿-@* Displays a list of Characters with basic information. *@
+
+@page "/characters"
+@using StarWarsApp.Services
+@using StarWarsApp.Models
+@inject SwapiService SwapiService
+@inject NavigationManager NavigationManager
+
+<h1>Star Wars Characters</h1>
+
+<input type="text" @bind="SearchTerm" placeholder="Search characters..." class="form-control mb-3" />
+
+@if (characters == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (FilteredCharacters.Count == 0)
+{
+    <p><em>No characters found.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>BirthYear</th>
+                <th>Gender</th>
+                <th>HomeWorld</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var character in FilteredCharacters)
+            {
+                <tr>
+                    <td>@character.Name</td>
+                    <td>@character.Birth_Year</td>
+                    <td>@character.Gender</td>
+                    <td>@character.HomeworldName</td> 
+                    <td>
+                        <button class="btn btn-info btn-sm" @onclick="@(() => ViewCharacterDetails(character.Url))">View Details</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Character> characters;
+    private List<Character> FilteredCharacters = new();
+    private string searchTerm = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        characters = await SwapiService.GetCharactersAsync();
+
+        foreach (var character in characters)
+        {
+            if (!string.IsNullOrEmpty(character.Homeworld))
+            {
+                var nameList = await SwapiService.GetNamesAsync(new List<string> { character.Homeworld });
+                character.HomeworldName = nameList.FirstOrDefault() ?? "Unknown";
+            }
+            else
+            {
+                character.HomeworldName = "Unknown";
+            }
+        }
+
+        FilteredCharacters = characters;
+    }
+
+    private string SearchTerm
+    {
+        get => searchTerm;
+        set
+        {
+            if (searchTerm != value)
+            {
+                searchTerm = value;
+                FilterCharacters();
+            }
+        }
+    }
+
+    private void FilterCharacters()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            FilteredCharacters = characters;
+        }
+        else
+        {
+            FilteredCharacters = characters
+                .Where(c => c.Name.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+    }
+
+    private void ViewCharacterDetails(string characterUrl)
+    {
+        var id = characterUrl.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+        NavigationManager.NavigateTo($"/people/{id}");
+    }
+}

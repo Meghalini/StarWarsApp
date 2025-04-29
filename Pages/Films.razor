@@ -1,0 +1,107 @@
+﻿@* Displays a list of Films with basic information. *@
+
+@using StarWarsApp.Services
+@using StarWarsApp.Models
+@page "/films"
+@inject NavigationManager NavigationManager
+@inject SwapiService SwapiService
+
+<h1>Star Wars Movies</h1>
+
+<input type="text" @bind="SearchTerm" placeholder="Search movies..." class="form-control mb-3" />
+
+@if (films == null)
+{
+    <p><em>Loading...</em></p>
+}
+else if (FilteredFilms.Count == 0)
+{
+    <p><em>No movies found.</em></p>
+}
+else
+{
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Episode</th>
+                <th>Director</th>
+                <th>Producer</th>
+                <th>Release Date</th>
+                <th>Action</th> 
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var film in FilteredFilms.Take(VisibleCount))
+            {
+                <tr>
+                    <td>@film.Title</td>
+                    <td>@film.Episode_Id</td>
+                    <td>@film.Director</td>
+                    <td>@film.Producer</td>
+                    <td>@film.Release_Date</td>
+                    <td>
+                        <button class="btn btn-info btn-sm" @onclick="@(() => ViewDetails(film.Episode_Id))">View Details</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+
+    @if (VisibleCount < FilteredFilms.Count)
+    {
+        <button class="btn btn-primary mt-3" @onclick="LoadMore">Load More</button>
+    }
+}
+
+@code {
+    private List<Film> films;
+    private List<Film> FilteredFilms = new();
+    private string searchTerm = "";
+    private int VisibleCount = 10;
+
+    protected override async Task OnInitializedAsync()
+    {
+        films = await SwapiService.GetFilmsAsync();
+        FilteredFilms = films;
+    }
+
+    private void LoadMore()
+    {
+        VisibleCount += 10;
+    }
+
+    private void FilterFilms()
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+        {
+            FilteredFilms = films;
+        }
+        else
+        {
+            FilteredFilms = films
+                .Where(f => f.Title.Contains(searchTerm, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+        }
+
+        VisibleCount = 10; // Reset when search happens
+    }
+
+    private string SearchTerm
+    {
+        get => searchTerm;
+        set
+        {
+            if (searchTerm != value)
+            {
+                searchTerm = value;
+                FilterFilms();
+            }
+        }
+    }
+
+    private void ViewDetails(int episodeId)
+    {
+        NavigationManager.NavigateTo($"/film/{episodeId}");
+    }
+}

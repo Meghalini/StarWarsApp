@@ -1,0 +1,126 @@
+@* Displays detailed information about a selected starship. *@
+
+@page "/starships/{StarshipId:int}"
+@using StarWarsApp.Services
+@using StarWarsApp.Models
+@inject SwapiService SwapiService
+@inject NavigationManager NavigationManager
+
+<h1>Starship Details</h1>
+
+@if (starship == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="card p-4 mb-3">
+        <h2>@starship.Name</h2>
+
+        <p><strong>Model:</strong> @starship.Model</p>
+        <p><strong>Manufacturer:</strong> @starship.Manufacturer</p>
+        <p><strong>Cost:</strong> @starship.cost_in_credits</p>
+        <p><strong>Length:</strong> @starship.Length</p>
+        <p><strong>Max Speed:</strong> @starship.max_atmosphering_speed</p>
+        <p><strong>Crew:</strong> @starship.Crew</p>
+        <p><strong>Passengers:</strong> @starship.Passengers</p>
+        <p><strong>Cargo Capacity:</strong> @starship.cargo_capacity</p>
+        <p><strong>Consumables:</strong> @starship.Consumables</p>
+        <p><strong>Hyperdrive Rating:</strong> @starship.hyperdrive_rating</p>
+        <p><strong>MGLT:</strong> @starship.MGLT</p>
+        <p><strong>Class:</strong> @starship.starship_class</p>
+
+        <h4>Related Information</h4>
+        <table class="table table-bordered">
+            <thead>
+                <tr>
+                    <th>Pilots</th>
+                    <th>Films</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>
+                        @if (Pilots.Any())
+                        {
+                            @foreach (var pilot in Pilots)
+                            {
+                                <div>
+                                    <a href="#" @onclick:preventDefault="true" @onclick="@(() => OpenCharacterDetails(pilot.Id))">@pilot.Name</a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div><em>No Pilots</em></div>
+                        }
+                    </td>
+                    <td>
+                        @if (Films.Any())
+                        {
+                            @foreach (var film in Films)
+                            {
+                                <div>
+                                    <a href="#" @onclick:preventDefault="true" @onclick="@(() => OpenFilmDetails(film.Id))">@film.Name</a>
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div><em>No Films</em></div>
+                        }
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+
+        <button class="btn btn-secondary mt-3" @onclick="GoBack">Back</button>
+    </div>
+}
+
+@code {
+    [Parameter]
+    public int StarshipId { get; set; }
+
+    private Starship starship;
+    private List<(string Name, string Id)> Films = new();
+    private List<(string Name, string Id)> Pilots = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var url = $"https://swapi.py4e.com/api/starships/{StarshipId}/";
+        starship = await SwapiService.GetStarshipDetailsAsync(url);
+
+        if (starship != null)
+        {
+            foreach (var filmUrl in starship.Films)
+            {
+                var id = await SwapiService.GetIdAsync(filmUrl);
+                var name = await SwapiService.GetNameAsync(filmUrl);
+                Films.Add((name, id));
+            }
+
+            foreach (var pilotUrl in starship.Pilots)
+            {
+                var id = pilotUrl.Split('/', StringSplitOptions.RemoveEmptyEntries).Last();
+                var name = await SwapiService.GetNameAsync(pilotUrl);
+                Pilots.Add((name, id));
+            }
+        }
+    }
+
+    private void OpenFilmDetails(string filmId)
+    {
+        NavigationManager.NavigateTo($"/film/{filmId}");
+    }
+
+    private void OpenCharacterDetails(string characterId)
+    {
+        NavigationManager.NavigateTo($"/people/{characterId}");
+    }
+
+    private void GoBack()
+    {
+        NavigationManager.NavigateTo("/starships");
+    }
+}
